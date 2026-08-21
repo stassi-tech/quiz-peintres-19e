@@ -9,10 +9,10 @@ const state = {
   fullQuestions: [], // toutes les questions du fichier importé (pour revenir après une révision)
 };
 const allFields = [
-  { key: 'artist', label: 'Artiste', input: 'artist-input', checkbox: 'rubrique-artist', mic: 'mic-artist', kbd: 'kbd-artist' },
-  { key: 'date', label: 'Date de création', input: 'date-input', checkbox: 'rubrique-date', mic: 'mic-date', kbd: 'kbd-date' },
-  { key: 'location', label: 'Lieu de conservation', input: 'location-input', checkbox: 'rubrique-location', mic: 'mic-location', kbd: 'kbd-location' },
-  { key: 'title', label: "Titre de l'œuvre", input: 'title-input', checkbox: 'rubrique-title', mic: 'mic-title', kbd: 'kbd-title' }
+  { key: 'artist', label: 'Artiste', input: 'artist-input', checkbox: 'rubrique-artist', mic: 'mic-artist' },
+  { key: 'date', label: 'Date de création', input: 'date-input', checkbox: 'rubrique-date', mic: 'mic-date' },
+  { key: 'location', label: 'Lieu de conservation', input: 'location-input', checkbox: 'rubrique-location', mic: 'mic-location' },
+  { key: 'title', label: "Titre de l'œuvre", input: 'title-input', checkbox: 'rubrique-title', mic: 'mic-title' }
 ];
 function activeFields() { return allFields.filter((field) => state.selectedFieldKeys.includes(field.key)); }
 
@@ -23,8 +23,12 @@ if (voiceSupported) {
 } else {
   allFields.forEach(({ mic }) => $(mic)?.classList.add('hidden'));
 }
+// La dictée vocale reste active en continu sur le même champ (ex. « Artiste ») d'une question
+// à l'autre, tant que l'utilisateur ne tape rien manuellement dans ce champ ou ne l'arrête pas lui-même.
 let activeRecognition = null;
 let activeMicButton = null;
+let activeMicField = null;
+let manualStopRequested = false;
 function resetMicButton(button) {
   if (!button) return;
   button.classList.remove('listening');
@@ -32,12 +36,18 @@ function resetMicButton(button) {
   button.textContent = '🎤';
 }
 function stopActiveDictation() {
+  manualStopRequested = true;
   if (activeRecognition) { try { activeRecognition.abort(); } catch (error) { /* déjà arrêté */ } }
   resetMicButton(activeMicButton);
-  activeRecognition = null; activeMicButton = null;
+  activeRecognition = null; activeMicButton = null; activeMicField = null;
 }
-function startDictation(button, input) {
-  stopActiveDictation(); // une seule dictée à la fois, et on repart toujours d'un état propre
+function startDictation(button, input, key) {
+  if (activeMicField === key && activeRecognition) {
+    stopActiveDictation(); // recliquer sur le même micro l'arrête
+    return;
+  }
+  stopActiveDictation(); // coupe une dictée continue sur un autre champ, s'il y en a une
+  manualStopRequested = false;
   let recognition;
   try {
     recognition = new SpeechRecognitionImpl();
@@ -46,53 +56,52 @@ function startDictation(button, input) {
     return;
   }
   recognition.lang = 'fr-FR';
+  recognition.continuous = true;
   recognition.interimResults = false;
   recognition.maxAlternatives = 1;
-  button.classList.add('listening'); button.disabled = true; button.textContent = '…';
-  activeRecognition = recognition; activeMicButton = button;
-  let settled = false;
-  const cleanup = () => {
-    if (settled) return;
-    settled = true;
-    clearTimeout(watchdog);
+  button.classList.add('listening'); button.textContent = '⏹️';
+  activeRecognition = recognition; activeMicButton = button; activeMicField = key;
+  const forget = () => {
     resetMicButton(button);
-    if (activeRecognition === recognition) { activeRecognition = null; activeMicButton = null; }
+    if (activeRecognition === recognition) { activeRecognition = null; activeMicButton = null; activeMicField = null; }
   };
-  // Filet de sécurité : certains navigateurs ne déclenchent pas toujours l'événement de fin
-  // de la reconnaissance vocale, ce qui laisserait le bouton bloqué indéfiniment.
-  const watchdog = setTimeout(() => { try { recognition.abort(); } catch (error) { /* déjà arrêté */ } cleanup(); }, 8000);
   recognition.addEventListener('result', (event) => {
     // Pas de focus() ici : sur smartphone, focus() ouvre le clavier virtuel automatiquement.
-    // On laisse le bouton clavier ⌨️ à côté du champ pour une correction volontaire.
-    input.value = event.results[0][0].transcript.trim();
+    const last = event.results[event.results.length - 1];
+    input.value = last[0].transcript.trim();
   });
-  recognition.addEventListener('end', cleanup);
+  recognition.addEventListener('end', () => {
+    if (manualStopRequested || activeRecognition !== recognition) return;
+    // Certains navigateurs referment la session après un silence ou au bout d'un moment :
+    // on la relance automatiquement pour que la dictée reste active « sur plusieurs pages ».
+    try { recognition.start(); } catch (error) { forget(); }
+  });
   recognition.addEventListener('error', (event) => {
-    cleanup();
+    if (event.error === 'aborted' || event.error === 'no-speech') return; // le redémarrage est géré par 'end'
+    manualStopRequested = true;
+    forget();
     if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
       alert("Le micro n'est pas autorisé pour ce site. Vérifiez les permissions du navigateur.");
-    } else if (event.error !== 'aborted' && event.error !== 'no-speech') {
-      alert("La dictée vocale n'a pas fonctionné. Réessayez, ou saisissez la réponse au clavier.");
+    } else {
+      alert("La dictée vocale a rencontré un problème et s'est arrêtée. Réessayez.");
     }
   });
   try {
     recognition.start();
   } catch (error) {
-    cleanup();
+    manualStopRequested = true;
+    forget();
     alert("Impossible de démarrer le micro. Réessayez.");
   }
 }
 if (voiceSupported) {
-  allFields.forEach(({ input, mic }) => {
+  allFields.forEach(({ key, input, mic }) => {
     const button = $(mic);
-    button.addEventListener('click', () => startDictation(button, $(input)));
+    button.addEventListener('click', () => startDictation(button, $(input), key));
+    // Taper manuellement dans le champ arrête la dictée continue en cours sur ce champ.
+    $(input).addEventListener('input', () => { if (activeMicField === key) stopActiveDictation(); });
   });
 }
-// Bouton clavier : ouvre volontairement le clavier virtuel pour corriger une dictée,
-// sans qu'il apparaisse automatiquement à la fin de la reconnaissance vocale.
-allFields.forEach(({ input, kbd }) => {
-  $(kbd)?.addEventListener('click', () => $(input).focus());
-});
 
 function keyName(value) {
   return String(value || '').trim().toLocaleLowerCase('fr-FR').replace(/œ/g, 'oe').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
@@ -218,8 +227,14 @@ function showPanel(name) {
 }
 
 function renderQuestion() {
-  stopActiveDictation(); // on ne garde jamais une dictée active d'une question à l'autre
+  // La dictée continue n'est plus interrompue au changement de question (voir startDictation) :
+  // on récupère au contraire ce qui vient d'être dicté pour pré-remplir la nouvelle question,
+  // sans écraser une réponse déjà enregistrée si on revient en arrière.
   const question = state.questions[state.index]; const answer = answerFor(state.index);
+  if (voiceSupported && activeMicField && state.selectedFieldKeys.includes(activeMicField) && !answer[activeMicField]) {
+    const continuousField = allFields.find((field) => field.key === activeMicField);
+    if (continuousField) answer[activeMicField] = $(continuousField.input).value;
+  }
   const modeLabel = state.mode === 'review' ? 'Révision des erreurs — ' : '';
   $('question-count').textContent = `${modeLabel}Question ${state.index + 1} sur ${state.questions.length}`;
   $('progress-bar').style.width = `${((state.index + 1) / state.questions.length) * 100}%`;
@@ -236,15 +251,19 @@ function renderQuestion() {
     message.textContent = `L'image n'a pas pu être chargée. Vérifiez le nom de fichier ou l'URL dans la ligne ${question.row} du fichier.`;
     message.classList.remove('hidden');
   };
-  allFields.forEach(({ key, input, mic, kbd }) => {
+  allFields.forEach(({ key, input, mic }) => {
     const wrapper = $(input).closest('label');
     const active = state.selectedFieldKeys.includes(key);
     wrapper.classList.toggle('hidden', !active);
     $(input).value = answer[key];
     $(input).disabled = answer.checked;
     $(input).required = active;
-    if (voiceSupported) { resetMicButton($(mic)); $(mic).disabled = answer.checked; }
-    $(kbd).disabled = answer.checked;
+    if (voiceSupported) {
+      const micBtn = $(mic);
+      // On ne réinitialise pas visuellement le micro du champ en écoute continue.
+      if (!(key === activeMicField && activeRecognition)) resetMicButton(micBtn);
+      micBtn.disabled = answer.checked;
+    }
   });
   $('answer-form').classList.toggle('hidden', answer.checked);
   $('correction').classList.toggle('hidden', !answer.checked);
@@ -262,7 +281,7 @@ function renderCorrection(answer, question) {
       return `<p class="correction-extra"><span class="correction-label">${label} (info)</span><strong class="correction-value">${value}</strong></p>`;
     }
     const correct = isMatch(answer[key], question[key]);
-    return `<p><span class="correction-label">${label}</span><span class="answer-result ${correct ? 'correct' : 'incorrect'}">${correct ? 'Correct ✓' : 'À réviser ✕'}</span><strong class="correction-value">${value}</strong></p>`;
+    return `<p><span class="answer-result ${correct ? 'correct' : 'incorrect'}">${correct ? 'Correct' : 'À réviser'}</span><span class="correction-label">${label}</span><strong class="correction-value">${value}</strong></p>`;
   }).join('');
 }
 function escapeHtml(value) { const div = document.createElement('div'); div.textContent = value; return div.innerHTML; }
