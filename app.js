@@ -213,6 +213,14 @@ function selectedRubriquesLabel() {
   const labels = activeFields().map((field) => field.label);
   return labels.join(', ');
 }
+function showPanel(name) {
+  // name: 'welcome' | 'quiz' | 'results' — centralise l'affichage des panneaux et de la barre
+  // latérale (titre + import), visible uniquement sur la page d'accueil.
+  $('welcome-panel').classList.toggle('hidden', name !== 'welcome');
+  $('quiz-panel').classList.toggle('hidden', name !== 'quiz');
+  $('results-panel').classList.toggle('hidden', name !== 'results');
+  $('sidebar').classList.toggle('hidden', name !== 'welcome');
+}
 
 function renderQuestion() {
   stopActiveDictation(); // on ne garde jamais une dictée active d'une question à l'autre
@@ -252,18 +260,19 @@ function renderQuestion() {
 function renderCorrection(answer, question) {
   $('correction-details').innerHTML = allFields.map(({ key, label }) => {
     const tested = state.selectedFieldKeys.includes(key);
+    const value = escapeHtml(question[key]);
     if (!tested) {
       // Rubrique non cochée : affichée à titre d'information complète, sans notation ✓/✕.
-      return `<p class="correction-extra"><strong>${label} :</strong> ${escapeHtml(question[key])}</p>`;
+      return `<p class="correction-extra"><span class="correction-label">${label} (info)</span><strong class="correction-value">${value}</strong></p>`;
     }
     const correct = isMatch(answer[key], question[key]);
-    return `<p><strong>${label} :</strong> <span class="answer-result ${correct ? 'correct' : 'incorrect'}">${correct ? '✓ Correct' : '✕ À retenir'}</span><br><span>Réponse attendue : ${escapeHtml(question[key])}</span></p>`;
+    return `<p><span class="correction-label">${label} — <span class="answer-result ${correct ? 'correct' : 'incorrect'}">${correct ? 'Correct ✓' : 'À revoir ✕'}</span></span><strong class="correction-value">${value}</strong></p>`;
   }).join('');
 }
 function escapeHtml(value) { const div = document.createElement('div'); div.textContent = value; return div.innerHTML; }
 
 function showResults() {
-  saveInputs(); $('quiz-panel').classList.add('hidden'); $('results-panel').classList.remove('hidden');
+  saveInputs(); showPanel('results');
   const correct = totalCorrect(); const possible = state.questions.length * activeFields().length; const percent = possible ? Math.round((correct / possible) * 100) : 0;
   $('final-score').textContent = `${correct} / ${possible} (${percent} %)`;
   $('final-message').textContent = percent === 100 ? 'Parfait ! Toutes les informations sont justes.' : percent >= 70 ? 'Très bon résultat. Revoyez les réponses restantes pour consolider vos repères.' : 'Continuez : la correction est disponible pour chaque œuvre.';
@@ -320,7 +329,7 @@ $('excel-file').addEventListener('change', async (event) => {
     state.fullQuestions = shuffleQuestions(questions);
     state.questions = state.fullQuestions;
     state.answers = []; state.index = 0;
-    $('welcome-panel').classList.add('hidden'); $('results-panel').classList.add('hidden'); $('quiz-panel').classList.remove('hidden'); renderQuestion();
+    showPanel('quiz'); renderQuestion();
   } catch (error) { alert(`Import impossible : ${error.message}`); }
   event.target.value = '';
 });
@@ -356,7 +365,7 @@ $('previous-button').addEventListener('click', () => { clearAutoAdvance(); saveI
 $('next-button').addEventListener('click', goToNextOrResults);
 $('review-button').addEventListener('click', () => {
   // Reprendre depuis le début le même jeu de questions (normal ou révision en cours)
-  $('results-panel').classList.add('hidden'); $('quiz-panel').classList.remove('hidden'); state.index = 0; renderQuestion();
+  showPanel('quiz'); state.index = 0; renderQuestion();
 });
 $('review-errors-button').addEventListener('click', () => {
   const missed = state.questions.filter((question, index) => !isFullyCorrect(state.answers[index], question));
@@ -365,14 +374,14 @@ $('review-errors-button').addEventListener('click', () => {
   state.questions = missed;
   state.answers = [];
   state.index = 0;
-  $('results-panel').classList.add('hidden'); $('quiz-panel').classList.remove('hidden'); renderQuestion();
+  showPanel('quiz'); renderQuestion();
 });
 $('restart-full-button').addEventListener('click', () => {
   state.mode = 'normal';
   state.questions = state.fullQuestions;
   state.answers = [];
   state.index = 0;
-  $('results-panel').classList.add('hidden'); $('quiz-panel').classList.remove('hidden'); renderQuestion();
+  showPanel('quiz'); renderQuestion();
 });
 $('export-copy-button').addEventListener('click', async () => {
   const text = buildExportText();

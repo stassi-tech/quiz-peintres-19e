@@ -38,7 +38,11 @@ h1,h2,h3,p { margin-top:0; } h2 { font-size:1.7rem; font-weight:500; }
 .mic-button.listening { background:var(--accent); border-color:var(--accent); color:#fff; animation:mic-pulse 1.1s ease-in-out infinite; }
 @keyframes mic-pulse { 0%,100% { transform:scale(1); } 50% { transform:scale(1.08); } }
 
-.correction { margin-top:20px; padding:14px 16px; background:#f7f2ea; border-left:4px solid var(--accent); }.correction h3 { margin-bottom:9px; font-size:1rem; }.correction p { margin:7px 0; line-height:1.35; font-family:Arial,sans-serif; font-size:.87rem; }.answer-result { font-weight:700; }.correct { color:var(--ok); }.incorrect { color:var(--wrong); }
+.correction { margin-top:20px; padding:14px 16px; background:#f7f2ea; border-left:4px solid var(--accent); }.correction h3 { margin-bottom:9px; font-size:1rem; }.correction p { margin:0 0 14px; line-height:1.3; }
+.correction-label { display:block; font-family:Arial,sans-serif; font-size:.74rem; font-weight:400; color:var(--muted); text-transform:uppercase; letter-spacing:.03em; margin-bottom:3px; }
+.correction-value { display:block; font-size:1.28rem; font-weight:700; color:var(--ink); line-height:1.25; }
+.correction-extra .correction-value { color:var(--muted); font-weight:700; }
+.answer-result { font-weight:700; text-transform:none; letter-spacing:0; } .correct { color:var(--ok); } .incorrect { color:var(--wrong); }
 .correction-extra { color:var(--muted); }
 .auto-advance-hint { margin-top:12px; padding-top:10px; border-top:1px dashed var(--border); color:var(--muted); font-style:italic; font-family:Arial,sans-serif; font-size:.82rem; }
 .link-button { border:0; background:none; padding:0; margin-left:6px; color:var(--accent); font-weight:700; font-style:normal; text-decoration:underline; cursor:pointer; }
