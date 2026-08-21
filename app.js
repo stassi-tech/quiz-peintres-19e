@@ -9,10 +9,10 @@ const state = {
   fullQuestions: [], // toutes les questions du fichier importé (pour revenir après une révision)
 };
 const allFields = [
-  { key: 'artist', label: 'Artiste', input: 'artist-input', checkbox: 'rubrique-artist', mic: 'mic-artist' },
-  { key: 'date', label: 'Date de création', input: 'date-input', checkbox: 'rubrique-date', mic: 'mic-date' },
-  { key: 'location', label: 'Lieu de conservation', input: 'location-input', checkbox: 'rubrique-location', mic: 'mic-location' },
-  { key: 'title', label: "Titre de l'œuvre", input: 'title-input', checkbox: 'rubrique-title', mic: 'mic-title' }
+  { key: 'artist', label: 'Artiste', input: 'artist-input', checkbox: 'rubrique-artist', mic: 'mic-artist', kbd: 'kbd-artist' },
+  { key: 'date', label: 'Date de création', input: 'date-input', checkbox: 'rubrique-date', mic: 'mic-date', kbd: 'kbd-date' },
+  { key: 'location', label: 'Lieu de conservation', input: 'location-input', checkbox: 'rubrique-location', mic: 'mic-location', kbd: 'kbd-location' },
+  { key: 'title', label: "Titre de l'œuvre", input: 'title-input', checkbox: 'rubrique-title', mic: 'mic-title', kbd: 'kbd-title' }
 ];
 function activeFields() { return allFields.filter((field) => state.selectedFieldKeys.includes(field.key)); }
 
@@ -25,6 +25,11 @@ if (voiceSupported) {
 }
 let activeRecognition = null;
 let activeMicButton = null;
+let autoAdvanceTimer = null;
+function clearAutoAdvance() {
+  if (autoAdvanceTimer) { clearTimeout(autoAdvanceTimer); autoAdvanceTimer = null; }
+  $('auto-advance-hint')?.classList.add('hidden');
+}
 function resetMicButton(button) {
   if (!button) return;
   button.classList.remove('listening');
@@ -62,8 +67,9 @@ function startDictation(button, input) {
   // de la reconnaissance vocale, ce qui laisserait le bouton bloqué indéfiniment.
   const watchdog = setTimeout(() => { try { recognition.abort(); } catch (error) { /* déjà arrêté */ } cleanup(); }, 8000);
   recognition.addEventListener('result', (event) => {
+    // Pas de focus() ici : sur smartphone, focus() ouvre le clavier virtuel automatiquement.
+    // On laisse le bouton clavier ⌨️ à côté du champ pour une correction volontaire.
     input.value = event.results[0][0].transcript.trim();
-    input.focus();
   });
   recognition.addEventListener('end', cleanup);
   recognition.addEventListener('error', (event) => {
@@ -87,6 +93,11 @@ if (voiceSupported) {
     button.addEventListener('click', () => startDictation(button, $(input)));
   });
 }
+// Bouton clavier : ouvre volontairement le clavier virtuel pour corriger une dictée,
+// sans qu'il apparaisse automatiquement à la fin de la reconnaissance vocale.
+allFields.forEach(({ input, kbd }) => {
+  $(kbd)?.addEventListener('click', () => $(input).focus());
+});
 
 function keyName(value) {
   return String(value || '').trim().toLocaleLowerCase('fr-FR').replace(/œ/g, 'oe').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
@@ -205,6 +216,7 @@ function selectedRubriquesLabel() {
 
 function renderQuestion() {
   stopActiveDictation(); // on ne garde jamais une dictée active d'une question à l'autre
+  clearAutoAdvance(); // ni une avance automatique en attente
   const question = state.questions[state.index]; const answer = answerFor(state.index);
   const modeLabel = state.mode === 'review' ? 'Révision des erreurs — ' : '';
   $('question-count').textContent = `${modeLabel}Question ${state.index + 1} sur ${state.questions.length}`;
@@ -222,7 +234,7 @@ function renderQuestion() {
     message.textContent = `L'image n'a pas pu être chargée. Vérifiez le nom de fichier ou l'URL dans la ligne ${question.row} du fichier.`;
     message.classList.remove('hidden');
   };
-  allFields.forEach(({ key, input, mic }) => {
+  allFields.forEach(({ key, input, mic, kbd }) => {
     const wrapper = $(input).closest('label');
     const active = state.selectedFieldKeys.includes(key);
     wrapper.classList.toggle('hidden', !active);
@@ -230,6 +242,7 @@ function renderQuestion() {
     $(input).disabled = answer.checked;
     $(input).required = active;
     if (voiceSupported) { resetMicButton($(mic)); $(mic).disabled = answer.checked; }
+    $(kbd).disabled = answer.checked;
   });
   $('check-button').classList.toggle('hidden', answer.checked); $('correction').classList.toggle('hidden', !answer.checked);
   if (answer.checked) renderCorrection(answer, question);
@@ -237,7 +250,12 @@ function renderQuestion() {
   $('next-button').textContent = state.index === state.questions.length - 1 ? 'Voir le score' : 'Suivante →';
 }
 function renderCorrection(answer, question) {
-  $('correction-details').innerHTML = activeFields().map(({ key, label }) => {
+  $('correction-details').innerHTML = allFields.map(({ key, label }) => {
+    const tested = state.selectedFieldKeys.includes(key);
+    if (!tested) {
+      // Rubrique non cochée : affichée à titre d'information complète, sans notation ✓/✕.
+      return `<p class="correction-extra"><strong>${label} :</strong> ${escapeHtml(question[key])}</p>`;
+    }
     const correct = isMatch(answer[key], question[key]);
     return `<p><strong>${label} :</strong> <span class="answer-result ${correct ? 'correct' : 'incorrect'}">${correct ? '✓ Correct' : '✕ À retenir'}</span><br><span>Réponse attendue : ${escapeHtml(question[key])}</span></p>`;
   }).join('');
@@ -315,9 +333,27 @@ $('image-folder').addEventListener('change', (event) => {
   if (state.questions.length) renderQuestion();
   event.target.value = '';
 });
-$('answer-form').addEventListener('submit', (event) => { event.preventDefault(); saveInputs(); answerFor(state.index).checked = true; renderQuestion(); });
-$('previous-button').addEventListener('click', () => { saveInputs(); if (state.index > 0) { state.index--; renderQuestion(); } });
-$('next-button').addEventListener('click', () => { saveInputs(); if (state.index === state.questions.length - 1) showResults(); else { state.index++; renderQuestion(); } });
+function finalizeCurrentAnswer() {
+  saveInputs();
+  answerFor(state.index).checked = true;
+}
+function goToNextOrResults() {
+  clearAutoAdvance();
+  finalizeCurrentAnswer();
+  if (state.index === state.questions.length - 1) { showResults(); }
+  else { state.index++; renderQuestion(); }
+}
+$('answer-form').addEventListener('submit', (event) => {
+  event.preventDefault();
+  finalizeCurrentAnswer(); // note la réponse même si on ne clique jamais sur « Suivante »
+  renderQuestion(); // affiche la correction
+  clearAutoAdvance();
+  autoAdvanceTimer = setTimeout(goToNextOrResults, 5000);
+  $('auto-advance-hint')?.classList.remove('hidden');
+});
+$('cancel-auto-advance')?.addEventListener('click', () => clearAutoAdvance());
+$('previous-button').addEventListener('click', () => { clearAutoAdvance(); saveInputs(); if (state.index > 0) { state.index--; renderQuestion(); } });
+$('next-button').addEventListener('click', goToNextOrResults);
 $('review-button').addEventListener('click', () => {
   // Reprendre depuis le début le même jeu de questions (normal ou révision en cours)
   $('results-panel').classList.add('hidden'); $('quiz-panel').classList.remove('hidden'); state.index = 0; renderQuestion();

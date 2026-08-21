@@ -3,17 +3,14 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Quiz d'art</title>
+    <title>Révision d'histoire de l'art</title>
     <link rel="stylesheet" href="style.css" />
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   </head>
   <body>
-    <main class="app-shell">
-      <header class="topbar">
-        <div>
-          <p class="eyebrow">RÉVISION D'HISTOIRE DE L'ART</p>
-          <h1>Quiz d'art</h1>
-        </div>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <h1 class="brand">Révision d'histoire de l'art</h1>
         <label class="import-button" for="excel-file">
           <span>Importer / remplacer un fichier</span>
           <input id="excel-file" type="file" accept=".xlsx,.xls,.csv" />
@@ -22,112 +19,122 @@
           <span>Importer le dossier d'images</span>
           <input id="image-folder" type="file" webkitdirectory directory multiple />
         </label>
-      </header>
+      </aside>
 
-      <section id="welcome-panel" class="welcome-panel">
-        <div class="welcome-icon" aria-hidden="true">✦</div>
-        <h2>Importez votre quiz</h2>
-        <p>Choisissez un fichier Excel ou CSV avec cinq colonnes : image, artiste, date de création, lieu de conservation et titre de l'œuvre.</p>
+      <main class="main-content">
+        <section id="welcome-panel" class="welcome-panel">
+          <div class="welcome-icon" aria-hidden="true">✦</div>
+          <h2>Importez votre quiz</h2>
+          <p>Choisissez un fichier Excel ou CSV avec cinq colonnes : image, artiste, date de création, lieu de conservation et titre de l'œuvre.</p>
 
-        <fieldset class="rubriques-fieldset">
-          <legend>Rubriques à réviser</legend>
-          <label class="rubrique-option">
-            <input type="checkbox" id="rubrique-artist" checked />
-            <span>Artiste</span>
-          </label>
-          <label class="rubrique-option">
-            <input type="checkbox" id="rubrique-date" checked />
-            <span>Date de création</span>
-          </label>
-          <label class="rubrique-option">
-            <input type="checkbox" id="rubrique-location" checked />
-            <span>Lieu de conservation</span>
-          </label>
-          <label class="rubrique-option">
-            <input type="checkbox" id="rubrique-title" checked />
-            <span>Titre de l'œuvre</span>
-          </label>
-        </fieldset>
-        <p class="hint">Décochez les rubriques que vous ne voulez pas réviser (par exemple, ne garder que l'artiste, ou l'artiste et le titre).</p>
+          <fieldset class="rubriques-fieldset">
+            <legend>Rubriques à réviser</legend>
+            <label class="rubrique-option">
+              <input type="checkbox" id="rubrique-artist" checked />
+              <span>Artiste</span>
+            </label>
+            <label class="rubrique-option">
+              <input type="checkbox" id="rubrique-date" checked />
+              <span>Date de création</span>
+            </label>
+            <label class="rubrique-option">
+              <input type="checkbox" id="rubrique-location" checked />
+              <span>Lieu de conservation</span>
+            </label>
+            <label class="rubrique-option">
+              <input type="checkbox" id="rubrique-title" checked />
+              <span>Titre de l'œuvre</span>
+            </label>
+          </fieldset>
+          <p class="hint">Décochez les rubriques que vous ne voulez pas réviser (par exemple, ne garder que l'artiste, ou l'artiste et le titre). La correction affichera toujours les 4 informations, mais seules les rubriques cochées sont notées.</p>
 
-        <label class="primary-button" for="excel-file">Choisir un fichier</label>
-        <p class="hint">La colonne <strong>image</strong> peut contenir une URL ou le nom d’un fichier du dossier d’images importé.</p>
-        <p id="voice-hint" class="hint hidden">🎤 Vous pouvez aussi dicter vos réponses à l'oral pendant le quiz (bouton micro à côté de chaque champ).</p>
-      </section>
+          <label class="primary-button" for="excel-file">Choisir un fichier</label>
+          <p class="hint">La colonne <strong>image</strong> peut contenir une URL ou le nom d’un fichier du dossier d’images importé.</p>
+          <p id="voice-hint" class="hint hidden">🎤 Vous pouvez aussi dicter vos réponses à l'oral pendant le quiz (bouton micro à côté de chaque champ).</p>
+        </section>
 
-      <section id="quiz-panel" class="quiz-panel hidden" aria-live="polite">
-        <div class="progress-row">
-          <span id="question-count">Question 1 sur 1</span>
-          <span id="score-summary">0 / 0 réponse correcte</span>
-        </div>
-        <div class="progress-track"><div id="progress-bar" class="progress-bar"></div></div>
+        <section id="quiz-panel" class="quiz-panel hidden" aria-live="polite">
+          <div class="progress-row">
+            <span id="question-count">Question 1 sur 1</span>
+            <span id="score-summary">0 / 0 réponse correcte</span>
+          </div>
+          <div class="progress-track"><div id="progress-bar" class="progress-bar"></div></div>
 
-        <div class="quiz-grid">
-          <figure class="artwork-card">
-            <img id="artwork-image" alt="Œuvre à identifier" />
-            <figcaption id="image-message" class="image-message hidden"></figcaption>
-          </figure>
+          <div class="quiz-grid">
+            <figure class="artwork-card">
+              <img id="artwork-image" alt="Œuvre à identifier" />
+              <figcaption id="image-message" class="image-message hidden"></figcaption>
+            </figure>
 
-          <section class="answer-card" aria-label="Vos réponses">
-            <h2>À vous de jouer</h2>
-            <p class="instruction">Identifiez cette œuvre avant d'afficher la correction.</p>
-            <form id="answer-form">
-              <label>Artiste
-                <div class="input-with-mic">
-                  <input id="artist-input" name="artist" autocomplete="off" placeholder="Ex. Claude Monet" />
-                  <button type="button" id="mic-artist" class="mic-button" aria-label="Dicter la réponse (Artiste)" title="Dicter la réponse">🎤</button>
-                </div>
-              </label>
-              <label>Date de création
-                <div class="input-with-mic">
-                  <input id="date-input" name="date" autocomplete="off" placeholder="Ex. 1872" />
-                  <button type="button" id="mic-date" class="mic-button" aria-label="Dicter la réponse (Date de création)" title="Dicter la réponse">🎤</button>
-                </div>
-              </label>
-              <label>Lieu de conservation
-                <div class="input-with-mic">
-                  <input id="location-input" name="location" autocomplete="off" placeholder="Ex. Musée d'Orsay, Paris" />
-                  <button type="button" id="mic-location" class="mic-button" aria-label="Dicter la réponse (Lieu de conservation)" title="Dicter la réponse">🎤</button>
-                </div>
-              </label>
-              <label>Titre de l'œuvre
-                <div class="input-with-mic">
-                  <input id="title-input" name="title" autocomplete="off" placeholder="Ex. Impression, soleil levant" />
-                  <button type="button" id="mic-title" class="mic-button" aria-label="Dicter la réponse (Titre de l'œuvre)" title="Dicter la réponse">🎤</button>
-                </div>
-              </label>
-              <button id="check-button" class="primary-button" type="submit">Afficher la correction</button>
-            </form>
+            <section class="answer-card" aria-label="Vos réponses">
+              <h2>À vous de jouer</h2>
+              <p class="instruction">Identifiez cette œuvre, puis validez : la correction s'affiche et l'œuvre suivante arrive automatiquement après quelques secondes.</p>
+              <form id="answer-form">
+                <label>Artiste
+                  <div class="input-with-tools">
+                    <input id="artist-input" name="artist" autocomplete="off" placeholder="Ex. Claude Monet" />
+                    <button type="button" id="mic-artist" class="mic-button" aria-label="Dicter la réponse (Artiste)" title="Dicter la réponse">🎤</button>
+                    <button type="button" id="kbd-artist" class="kbd-button" aria-label="Corriger au clavier (Artiste)" title="Corriger au clavier">⌨️</button>
+                  </div>
+                </label>
+                <label>Date de création
+                  <div class="input-with-tools">
+                    <input id="date-input" name="date" autocomplete="off" placeholder="Ex. 1872" />
+                    <button type="button" id="mic-date" class="mic-button" aria-label="Dicter la réponse (Date de création)" title="Dicter la réponse">🎤</button>
+                    <button type="button" id="kbd-date" class="kbd-button" aria-label="Corriger au clavier (Date de création)" title="Corriger au clavier">⌨️</button>
+                  </div>
+                </label>
+                <label>Lieu de conservation
+                  <div class="input-with-tools">
+                    <input id="location-input" name="location" autocomplete="off" placeholder="Ex. Musée d'Orsay, Paris" />
+                    <button type="button" id="mic-location" class="mic-button" aria-label="Dicter la réponse (Lieu de conservation)" title="Dicter la réponse">🎤</button>
+                    <button type="button" id="kbd-location" class="kbd-button" aria-label="Corriger au clavier (Lieu de conservation)" title="Corriger au clavier">⌨️</button>
+                  </div>
+                </label>
+                <label>Titre de l'œuvre
+                  <div class="input-with-tools">
+                    <input id="title-input" name="title" autocomplete="off" placeholder="Ex. Impression, soleil levant" />
+                    <button type="button" id="mic-title" class="mic-button" aria-label="Dicter la réponse (Titre de l'œuvre)" title="Dicter la réponse">🎤</button>
+                    <button type="button" id="kbd-title" class="kbd-button" aria-label="Corriger au clavier (Titre de l'œuvre)" title="Corriger au clavier">⌨️</button>
+                  </div>
+                </label>
+                <button id="check-button" class="primary-button" type="submit">Valider ma réponse</button>
+              </form>
 
-            <div id="correction" class="correction hidden">
-              <h3>Correction</h3>
-              <div id="correction-details"></div>
-            </div>
-          </section>
-        </div>
+              <div id="correction" class="correction hidden">
+                <h3>Correction</h3>
+                <div id="correction-details"></div>
+                <p id="auto-advance-hint" class="auto-advance-hint hidden">
+                  Passage automatique à la question suivante dans quelques secondes…
+                  <button type="button" id="cancel-auto-advance" class="link-button">Rester ici</button>
+                </p>
+              </div>
 
-        <nav class="navigation" aria-label="Navigation du quiz">
-          <button id="previous-button" class="secondary-button" type="button">← Précédente</button>
-          <button id="next-button" class="secondary-button" type="button">Suivante →</button>
-        </nav>
-      </section>
+              <nav class="navigation" aria-label="Navigation du quiz">
+                <button id="previous-button" class="nav-button" type="button">← Précédente</button>
+                <button id="next-button" class="nav-button" type="button">Suivante →</button>
+              </nav>
+            </section>
+          </div>
+        </section>
 
-      <section id="results-panel" class="results-panel hidden">
-        <p class="eyebrow">QUIZ TERMINÉ</p>
-        <h2>Votre score : <span id="final-score"></span></h2>
-        <p id="final-message"></p>
-        <div class="results-actions">
-          <button id="review-button" class="primary-button" type="button">Revoir les réponses</button>
-          <button id="review-errors-button" class="secondary-button hidden" type="button">Revoir les questions ratées</button>
-          <button id="restart-full-button" class="secondary-button hidden" type="button">Reprendre le quiz complet</button>
-        </div>
-        <div class="export-actions">
-          <button id="export-copy-button" class="secondary-button" type="button">Copier les résultats</button>
-          <button id="export-download-button" class="secondary-button" type="button">Télécharger les résultats (.txt)</button>
-        </div>
-        <p id="export-feedback" class="export-feedback hidden"></p>
-      </section>
-    </main>
+        <section id="results-panel" class="results-panel hidden">
+          <p class="eyebrow">QUIZ TERMINÉ</p>
+          <h2>Votre score : <span id="final-score"></span></h2>
+          <p id="final-message"></p>
+          <div class="results-actions">
+            <button id="review-button" class="primary-button" type="button">Revoir les réponses</button>
+            <button id="review-errors-button" class="secondary-button hidden" type="button">Revoir les questions ratées</button>
+            <button id="restart-full-button" class="secondary-button hidden" type="button">Reprendre le quiz complet</button>
+          </div>
+          <div class="export-actions">
+            <button id="export-copy-button" class="secondary-button" type="button">Copier les résultats</button>
+            <button id="export-download-button" class="secondary-button" type="button">Télécharger les résultats (.txt)</button>
+          </div>
+          <p id="export-feedback" class="export-feedback hidden"></p>
+        </section>
+      </main>
+    </div>
     <script src="app.js"></script>
   </body>
 </html>
