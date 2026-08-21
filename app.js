@@ -25,11 +25,6 @@ if (voiceSupported) {
 }
 let activeRecognition = null;
 let activeMicButton = null;
-let autoAdvanceTimer = null;
-function clearAutoAdvance() {
-  if (autoAdvanceTimer) { clearTimeout(autoAdvanceTimer); autoAdvanceTimer = null; }
-  $('auto-advance-hint')?.classList.add('hidden');
-}
 function resetMicButton(button) {
   if (!button) return;
   button.classList.remove('listening');
@@ -224,7 +219,6 @@ function showPanel(name) {
 
 function renderQuestion() {
   stopActiveDictation(); // on ne garde jamais une dictée active d'une question à l'autre
-  clearAutoAdvance(); // ni une avance automatique en attente
   const question = state.questions[state.index]; const answer = answerFor(state.index);
   const modeLabel = state.mode === 'review' ? 'Révision des erreurs — ' : '';
   $('question-count').textContent = `${modeLabel}Question ${state.index + 1} sur ${state.questions.length}`;
@@ -252,7 +246,9 @@ function renderQuestion() {
     if (voiceSupported) { resetMicButton($(mic)); $(mic).disabled = answer.checked; }
     $(kbd).disabled = answer.checked;
   });
-  $('check-button').classList.toggle('hidden', answer.checked); $('correction').classList.toggle('hidden', !answer.checked);
+  $('answer-form').classList.toggle('hidden', answer.checked);
+  $('correction').classList.toggle('hidden', !answer.checked);
+  document.body.classList.toggle('is-corrected', answer.checked);
   if (answer.checked) renderCorrection(answer, question);
   $('previous-button').disabled = state.index === 0;
   $('next-button').textContent = state.index === state.questions.length - 1 ? 'Voir le score' : 'Suivante →';
@@ -266,7 +262,7 @@ function renderCorrection(answer, question) {
       return `<p class="correction-extra"><span class="correction-label">${label} (info)</span><strong class="correction-value">${value}</strong></p>`;
     }
     const correct = isMatch(answer[key], question[key]);
-    return `<p><span class="correction-label">${label} — <span class="answer-result ${correct ? 'correct' : 'incorrect'}">${correct ? 'Correct ✓' : 'À revoir ✕'}</span></span><strong class="correction-value">${value}</strong></p>`;
+    return `<p><span class="correction-label">${label}</span><span class="answer-result ${correct ? 'correct' : 'incorrect'}">${correct ? 'Correct ✓' : 'À réviser ✕'}</span><strong class="correction-value">${value}</strong></p>`;
   }).join('');
 }
 function escapeHtml(value) { const div = document.createElement('div'); div.textContent = value; return div.innerHTML; }
@@ -338,7 +334,6 @@ function finalizeCurrentAnswer() {
   answerFor(state.index).checked = true;
 }
 function goToNextOrResults() {
-  clearAutoAdvance();
   finalizeCurrentAnswer();
   if (state.index === state.questions.length - 1) { showResults(); }
   else { state.index++; renderQuestion(); }
@@ -346,13 +341,9 @@ function goToNextOrResults() {
 $('answer-form').addEventListener('submit', (event) => {
   event.preventDefault();
   finalizeCurrentAnswer(); // note la réponse même si on ne clique jamais sur « Suivante »
-  renderQuestion(); // affiche la correction
-  clearAutoAdvance();
-  autoAdvanceTimer = setTimeout(goToNextOrResults, 5000);
-  $('auto-advance-hint')?.classList.remove('hidden');
+  renderQuestion(); // affiche la correction ; on attend le clic sur « Suivante »
 });
-$('cancel-auto-advance')?.addEventListener('click', () => clearAutoAdvance());
-$('previous-button').addEventListener('click', () => { clearAutoAdvance(); saveInputs(); if (state.index > 0) { state.index--; renderQuestion(); } });
+$('previous-button').addEventListener('click', () => { saveInputs(); if (state.index > 0) { state.index--; renderQuestion(); } });
 $('next-button').addEventListener('click', goToNextOrResults);
 $('review-button').addEventListener('click', () => {
   // Reprendre depuis le début le même jeu de questions (normal ou révision en cours)
