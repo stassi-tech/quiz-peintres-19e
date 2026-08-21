@@ -11,45 +11,34 @@
     <div class="app-shell">
       <aside class="sidebar" id="sidebar">
         <h1 class="brand">Révision d'histoire de l'art</h1>
-        <label class="import-button" for="excel-file">
-          <span>Importer / remplacer un fichier</span>
-          <input id="excel-file" type="file" accept=".xlsx,.xls,.csv" />
-        </label>
-        <label class="folder-button" for="image-folder">
-          <span>Importer le dossier d'images</span>
-          <input id="image-folder" type="file" webkitdirectory directory multiple />
-        </label>
       </aside>
 
       <main class="main-content">
         <section id="welcome-panel" class="welcome-panel">
-          <div class="welcome-icon" aria-hidden="true">✦</div>
-          <h2>Importez votre quiz</h2>
-          <p>Choisissez un fichier Excel ou CSV avec cinq colonnes : image, artiste, date de création, lieu de conservation et titre de l'œuvre.</p>
-
           <fieldset class="rubriques-fieldset">
-            <legend>Rubriques à réviser</legend>
+            <legend>Quelles informations voulez-vous donner pour identifier les images du quiz&nbsp;? Cochez-les.</legend>
             <label class="rubrique-option">
-              <input type="checkbox" id="rubrique-artist" checked />
+              <input type="checkbox" id="rubrique-artist" />
               <span>Artiste</span>
             </label>
             <label class="rubrique-option">
-              <input type="checkbox" id="rubrique-date" checked />
+              <input type="checkbox" id="rubrique-date" />
               <span>Date de création</span>
             </label>
             <label class="rubrique-option">
-              <input type="checkbox" id="rubrique-location" checked />
+              <input type="checkbox" id="rubrique-location" />
               <span>Lieu de conservation</span>
             </label>
             <label class="rubrique-option">
-              <input type="checkbox" id="rubrique-title" checked />
+              <input type="checkbox" id="rubrique-title" />
               <span>Titre de l'œuvre</span>
             </label>
           </fieldset>
-          <p class="hint">Décochez les rubriques que vous ne voulez pas réviser (par exemple, ne garder que l'artiste, ou l'artiste et le titre). La correction affichera toujours les 4 informations, mais seules les rubriques cochées sont notées.</p>
 
-          <label class="primary-button" for="excel-file">Choisir un fichier</label>
-          <p class="hint">La colonne <strong>image</strong> peut contenir une URL ou le nom d’un fichier du dossier d’images importé.</p>
+          <label class="primary-button" for="excel-file">
+            Choisir un fichier
+            <input id="excel-file" type="file" accept=".xlsx,.xls,.csv" />
+          </label>
           <p id="voice-hint" class="hint hidden">🎤 Vous pouvez aussi dicter vos réponses à l'oral pendant le quiz (bouton micro à côté de chaque champ).</p>
         </section>
 

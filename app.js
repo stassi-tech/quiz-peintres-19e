@@ -333,15 +333,6 @@ $('excel-file').addEventListener('change', async (event) => {
   } catch (error) { alert(`Import impossible : ${error.message}`); }
   event.target.value = '';
 });
-$('image-folder').addEventListener('change', (event) => {
-  [...event.target.files].forEach((file) => {
-    const url = URL.createObjectURL(file);
-    state.imageFiles.set(file.name, url);
-    state.imageFiles.set(file.name.toLocaleLowerCase('fr-FR'), url);
-  });
-  if (state.questions.length) renderQuestion();
-  event.target.value = '';
-});
 function finalizeCurrentAnswer() {
   saveInputs();
   answerFor(state.index).checked = true;
