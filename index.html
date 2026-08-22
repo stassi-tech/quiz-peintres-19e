@@ -40,7 +40,7 @@
             Choisir un fichier
             <input id="excel-file" type="file" accept=".xlsx,.xls,.csv" />
           </label>
-          <p id="voice-hint" class="hint hidden">🎤 Vous pouvez aussi dicter vos réponses à l'oral pendant le quiz (bouton micro à côté de chaque champ).</p>
+          <p id="voice-hint" class="hint hidden">🎤 Vous pouvez aussi dicter vos réponses à l'oral pendant le quiz : touchez le champ à remplir, puis appuyez sur le bouton micro.</p>
         </section>
 
         <section id="quiz-panel" class="quiz-panel hidden" aria-live="polite">
@@ -58,29 +58,18 @@
 
             <section class="answer-card" aria-label="Vos réponses">
               <form id="answer-form">
+                <button type="button" id="mic-global" class="mic-global-button hidden" aria-label="Dicter la réponse au champ sélectionné">🎤 Dicter (touchez un champ, puis parlez)</button>
                 <label>Artiste
-                  <div class="input-with-tools">
-                    <input id="artist-input" name="artist" autocomplete="off" placeholder="Ex. Claude Monet" />
-                    <button type="button" id="mic-artist" class="mic-button" aria-label="Dicter la réponse (Artiste)" title="Dicter la réponse">🎤</button>
-                  </div>
+                  <input id="artist-input" name="artist" autocomplete="off" placeholder="Ex. Claude Monet" />
                 </label>
                 <label>Date de création
-                  <div class="input-with-tools">
-                    <input id="date-input" name="date" autocomplete="off" placeholder="Ex. 1872" />
-                    <button type="button" id="mic-date" class="mic-button" aria-label="Dicter la réponse (Date de création)" title="Dicter la réponse">🎤</button>
-                  </div>
+                  <input id="date-input" name="date" autocomplete="off" placeholder="Ex. 1872" />
                 </label>
                 <label>Lieu de conservation
-                  <div class="input-with-tools">
-                    <input id="location-input" name="location" autocomplete="off" placeholder="Ex. Musée d'Orsay, Paris" />
-                    <button type="button" id="mic-location" class="mic-button" aria-label="Dicter la réponse (Lieu de conservation)" title="Dicter la réponse">🎤</button>
-                  </div>
+                  <input id="location-input" name="location" autocomplete="off" placeholder="Ex. Musée d'Orsay, Paris" />
                 </label>
                 <label>Titre de l'œuvre
-                  <div class="input-with-tools">
-                    <input id="title-input" name="title" autocomplete="off" placeholder="Ex. Impression, soleil levant" />
-                    <button type="button" id="mic-title" class="mic-button" aria-label="Dicter la réponse (Titre de l'œuvre)" title="Dicter la réponse">🎤</button>
-                  </div>
+                  <input id="title-input" name="title" autocomplete="off" placeholder="Ex. Impression, soleil levant" />
                 </label>
                 <button id="check-button" class="primary-button" type="submit">Valider ma réponse</button>
               </form>
