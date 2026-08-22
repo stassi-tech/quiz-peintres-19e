@@ -272,14 +272,7 @@ function showPanel(name) {
 
 function renderQuestion() {
   clearAdvanceTimers(); // pas d'avance automatique différée qui tomberait sur la mauvaise question
-  // La dictée continue n'est plus interrompue au changement de question (voir startDictation) :
-  // on récupère au contraire ce qui vient d'être dicté pour pré-remplir la nouvelle question,
-  // sans écraser une réponse déjà enregistrée si on revient en arrière.
   const question = state.questions[state.index]; const answer = answerFor(state.index);
-  if (voiceSupported && micIsListening) {
-    const target = currentDictationTarget();
-    if (target && !answer[target.key]) answer[target.key] = $(target.input).value;
-  }
   const modeLabel = state.mode === 'review' ? 'Révision des erreurs — ' : '';
   $('question-count').textContent = `${modeLabel}Question ${state.index + 1} sur ${state.questions.length}`;
   $('progress-bar').style.width = `${((state.index + 1) / state.questions.length) * 100}%`;
@@ -344,7 +337,10 @@ function renderCorrection(answer, question) {
 function escapeHtml(value) { const div = document.createElement('div'); div.textContent = value; return div.innerHTML; }
 
 function showResults() {
-  saveInputs(); showPanel('results');
+  // La réponse a déjà été enregistrée par finalizeCurrentAnswer() juste avant l'appel à
+  // showResults() (voir goToNextOrResults) : pas besoin, et surtout pas question, de relire
+  // les champs ici, puisqu'ils ont été vidés entre-temps.
+  showPanel('results');
   const correct = totalCorrect(); const possible = state.questions.length * activeFields().length; const percent = possible ? Math.round((correct / possible) * 100) : 0;
   $('final-score').textContent = `${correct} / ${possible} (${percent} %)`;
   $('final-message').textContent = percent === 100 ? 'Parfait ! Toutes les informations sont justes.' : percent >= 70 ? 'Très bon résultat. Revoyez les réponses restantes pour consolider vos repères.' : 'Continuez : la correction est disponible pour chaque œuvre.';
@@ -406,8 +402,14 @@ $('excel-file').addEventListener('change', async (event) => {
   event.target.value = '';
 });
 function finalizeCurrentAnswer() {
+  const answer = answerFor(state.index);
+  if (answer.checked) return; // déjà validée : on ne relit pas les champs (vidés depuis), pour ne pas écraser la réponse enregistrée
   saveInputs();
-  answerFor(state.index).checked = true;
+  answer.checked = true;
+  // On vide les champs à l'écran une fois la réponse enregistrée : évite qu'un texte dicté
+  // laissé dans un champ (faute d'avoir pu avancer vers un champ suivant) ne réapparaisse
+  // par erreur sur la question suivante.
+  allFields.forEach(({ input }) => { $(input).value = ''; });
 }
 function goToNextOrResults() {
   finalizeCurrentAnswer();
@@ -419,7 +421,10 @@ $('answer-form').addEventListener('submit', (event) => {
   finalizeCurrentAnswer(); // note la réponse même si on ne clique jamais sur « Suivante »
   renderQuestion(); // affiche la correction ; on attend le clic sur « Suivante »
 });
-$('previous-button').addEventListener('click', () => { saveInputs(); if (state.index > 0) { state.index--; renderQuestion(); } });
+$('previous-button').addEventListener('click', () => {
+  if (!answerFor(state.index).checked) saveInputs(); // ne pas écraser une réponse déjà validée (champs vidés depuis)
+  if (state.index > 0) { state.index--; renderQuestion(); }
+});
 $('next-button').addEventListener('click', goToNextOrResults);
 $('review-button').addEventListener('click', () => {
   // Reprendre depuis le début le même jeu de questions (normal ou révision en cours)
