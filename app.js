@@ -10,9 +10,9 @@ const state = {
 };
 const allFields = [
   { key: 'artist', label: 'Artiste', input: 'artist-input', checkbox: 'rubrique-artist' },
+  { key: 'title', label: "Titre de l'œuvre", input: 'title-input', checkbox: 'rubrique-title' },
   { key: 'date', label: 'Date de création', input: 'date-input', checkbox: 'rubrique-date' },
-  { key: 'location', label: 'Lieu de conservation', input: 'location-input', checkbox: 'rubrique-location' },
-  { key: 'title', label: "Titre de l'œuvre", input: 'title-input', checkbox: 'rubrique-title' }
+  { key: 'location', label: 'Lieu de conservation', input: 'location-input', checkbox: 'rubrique-location' }
 ];
 function activeFields() { return allFields.filter((field) => state.selectedFieldKeys.includes(field.key)); }
 
@@ -317,10 +317,24 @@ function renderQuestion() {
   $('previous-button').disabled = state.index === 0;
   $('next-button').textContent = state.index === state.questions.length - 1 ? 'Voir le score' : 'Suivante →';
 }
+function formatArtistName(name) {
+  // Convention des légendes muséales : prénom normal, nom de famille en MAJUSCULES
+  // (ex. « Auguste RENOIR »). Heuristique : le dernier mot est considéré comme le nom de famille.
+  const parts = String(name).trim().split(/\s+/).filter(Boolean);
+  if (!parts.length) return name;
+  if (parts.length === 1) return parts[0].toLocaleUpperCase('fr-FR');
+  const surname = parts.pop().toLocaleUpperCase('fr-FR');
+  return [...parts, surname].join(' ');
+}
+function formatCorrectionValue(key, rawValue) {
+  if (key === 'artist') return escapeHtml(formatArtistName(rawValue));
+  if (key === 'title') return `<em>${escapeHtml(rawValue)}</em>`;
+  return escapeHtml(rawValue);
+}
 function renderCorrection(answer, question) {
   $('correction-details').innerHTML = allFields.map(({ key, label }) => {
     const tested = state.selectedFieldKeys.includes(key);
-    const value = escapeHtml(question[key]);
+    const value = formatCorrectionValue(key, question[key]);
     if (!tested) {
       // Rubrique non cochée : affichée à titre d'information complète, sans notation ✓/✕.
       return `<div class="correction-item correction-extra">

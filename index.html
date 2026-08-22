@@ -10,8 +10,8 @@
   <body>
     <div class="app-shell">
       <aside class="sidebar" id="sidebar">
-        <h1 class="brand">Révision d'histoire de l'art</h1>
         <img class="sidebar-illustration" src="assets/accueil.jpg" alt="" aria-hidden="true" />
+        <p class="illustration-caption">Auguste RENOIR, <em>Portrait d'Eugène Murer</em>, 1877, Metropolitan Museum of Art, New York.</p>
       </aside>
 
       <main class="main-content">
@@ -25,16 +25,16 @@
               <span>Artiste</span>
             </label>
             <label class="rubrique-option">
+              <input type="checkbox" id="rubrique-title" />
+              <span>Titre de l'œuvre</span>
+            </label>
+            <label class="rubrique-option">
               <input type="checkbox" id="rubrique-date" />
               <span>Date de création</span>
             </label>
             <label class="rubrique-option">
               <input type="checkbox" id="rubrique-location" />
               <span>Lieu de conservation</span>
-            </label>
-            <label class="rubrique-option">
-              <input type="checkbox" id="rubrique-title" />
-              <span>Titre de l'œuvre</span>
             </label>
           </fieldset>
 
@@ -66,14 +66,14 @@
                 <label>Artiste
                   <input id="artist-input" name="artist" autocomplete="off" />
                 </label>
+                <label>Titre de l'œuvre
+                  <input id="title-input" name="title" autocomplete="off" />
+                </label>
                 <label>Date de création
                   <input id="date-input" name="date" autocomplete="off" />
                 </label>
                 <label>Lieu de conservation
                   <input id="location-input" name="location" autocomplete="off" />
-                </label>
-                <label>Titre de l'œuvre
-                  <input id="title-input" name="title" autocomplete="off" />
                 </label>
                 <button id="check-button" class="primary-button" type="submit">Valider ma réponse</button>
               </form>
