@@ -50,7 +50,7 @@ function resetMicButton() {
   const button = $('mic-global');
   if (!button) return;
   button.classList.remove('listening');
-  button.textContent = '🎤 Dicter (touchez un champ, puis parlez)';
+  button.textContent = '🎤 Appuyez pour dicter';
   micIsListening = false;
 }
 function stopActiveDictation() {
@@ -75,7 +75,7 @@ function startDictation() {
   recognition.interimResults = false;
   recognition.maxAlternatives = 1;
   const button = $('mic-global');
-  button.classList.add('listening'); button.textContent = '⏹️ Arrêter la dictée'; micIsListening = true;
+  button.classList.add('listening'); button.textContent = 'Parlez'; micIsListening = true;
   activeRecognition = recognition;
   const forget = () => { resetMicButton(); if (activeRecognition === recognition) activeRecognition = null; };
   recognition.addEventListener('result', (event) => {
