@@ -208,17 +208,20 @@ function yearsOf(text) {
   return matches ? matches.map(Number) : [];
 }
 function sameDecade(yearA, yearB) { return Math.floor(yearA / 10) === Math.floor(yearB / 10); }
-function isMatch(actual, expected) {
+function isMatch(actual, expected, fieldKey) {
   const answer = keyName(actual); const target = keyName(expected);
   if (!answer || !target) return false;
   if (answer === target) return true;
-  // Dates : si la réponse attendue contient une année, on tolère toute année de la même décennie
-  // (ex. la bonne date est 1784 : 1780 à 1789 sont acceptées) plutôt que d'exiger l'année exacte.
-  const targetYears = yearsOf(target);
-  if (targetYears.length) {
-    const answerYears = yearsOf(answer);
-    if (!answerYears.length) return false;
-    return targetYears.some((targetYear) => answerYears.some((answerYear) => sameDecade(targetYear, answerYear)));
+  // Dates : uniquement pour le champ « date de création ». Si on appliquait cette règle à tous
+  // les champs, un titre contenant une année (« Le 3 mai 1810 », « ... en 1890 ») basculerait à
+  // tort en comparaison d'année au lieu d'une comparaison de texte normale.
+  if (fieldKey === 'date') {
+    const targetYears = yearsOf(target);
+    if (targetYears.length) {
+      const answerYears = yearsOf(answer);
+      if (!answerYears.length) return false;
+      return targetYears.some((targetYear) => answerYears.some((answerYear) => sameDecade(targetYear, answerYear)));
+    }
   }
   // Accepte un élément significatif de la réponse attendue : « Monet » ou « Orsay ».
   if (answer.length >= 3 && (target.includes(answer) || answer.includes(target))) return true;
@@ -237,7 +240,7 @@ function isMatch(actual, expected) {
   }
   return false;
 }
-function correctCount(answer, question) { return activeFields().reduce((count, field) => count + Number(isMatch(answer[field.key], question[field.key])), 0); }
+function correctCount(answer, question) { return activeFields().reduce((count, field) => count + Number(isMatch(answer[field.key], question[field.key], field.key)), 0); }
 function isFullyCorrect(answer, question) { return answer?.checked && correctCount(answer, question) === activeFields().length; }
 function totalCorrect() { return state.questions.reduce((total, question, index) => total + (state.answers[index]?.checked ? correctCount(state.answers[index], question) : 0), 0); }
 function checkedQuestions() { return state.answers.filter((answer) => answer?.checked).length; }
@@ -331,7 +334,7 @@ function renderCorrection(answer, question) {
         <strong class="correction-value">${value}</strong>
       </div>`;
     }
-    const correct = isMatch(answer[key], question[key]);
+    const correct = isMatch(answer[key], question[key], key);
     return `<div class="correction-item">
       <span class="correction-label">${label}</span><span class="answer-result ${correct ? 'correct' : 'incorrect'}">${correct ? 'Correct' : 'À réviser'}</span>
       <strong class="correction-value">${value}</strong>
@@ -378,7 +381,7 @@ function buildExportText() {
     lines.push('');
     lines.push(`${index + 1}. ${question.title || '(titre non renseigné)'} — ${question.artist || '(artiste non renseigné)'} [${score}/${activeFields().length}]`);
     activeFields().forEach(({ key, label }) => {
-      const ok = isMatch(answer[key], question[key]);
+      const ok = isMatch(answer[key], question[key], key);
       lines.push(`   - ${label} : ${ok ? 'correct' : 'à revoir'} (réponse attendue : ${question[key]})`);
     });
   });
