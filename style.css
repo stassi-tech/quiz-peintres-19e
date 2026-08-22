@@ -3,11 +3,11 @@
 body { margin:0; color:var(--ink); background:radial-gradient(circle at top right,#e7d4bd 0,transparent 32rem),var(--canvas); font-family:Georgia, "Times New Roman", serif; }
 button, input { font:inherit; }
 
-.app-shell { width:min(1600px, calc(100% - 32px)); margin:0 auto; padding:20px 0 30px; display:flex; align-items:stretch; gap:26px; }
-.sidebar { flex:1 1 0; display:flex; flex-direction:column; gap:10px; position:sticky; top:20px; align-self:flex-start; }
-.main-content { flex:1 1 0; min-width:0; }
-.sidebar-illustration { width:100%; height:100%; min-height:45vh; max-height:52vh; object-fit:cover; border-radius:8px; box-shadow:0 10px 24px rgba(54,45,31,.15); display:block; }
-.illustration-caption { margin:0; font-family:Georgia, "Times New Roman", serif; font-size:.85rem; font-style:italic; color:var(--muted); line-height:1.4; }
+.app-shell { width:min(1600px, calc(100% - 32px)); margin:0 auto; padding:20px 0 30px; display:flex; align-items:stretch; gap:26px; min-height:100vh; }
+.sidebar { flex:1 1 0; display:flex; flex-direction:column; gap:14px; justify-content:center; position:sticky; top:20px; align-self:stretch; background:#f6ecd6; border-radius:12px; padding:28px; }
+.main-content { flex:1 1 0; min-width:0; display:flex; flex-direction:column; justify-content:center; }
+.sidebar-illustration { width:100%; height:100%; flex:1 1 auto; min-height:0; object-fit:contain; border-radius:6px; display:block; }
+.illustration-caption { margin:0; font-family:Georgia, "Times New Roman", serif; font-size:.85rem; font-style:italic; color:var(--muted); line-height:1.4; text-align:center; }
 .eyebrow { margin:0 0 7px; font-family:Arial,sans-serif; font-size:.72rem; font-weight:700; letter-spacing:.13em; color:var(--accent); }
 h1,h2,h3,p { margin-top:0; } h2 { font-size:1.7rem; font-weight:500; }
 
@@ -63,9 +63,9 @@ h1,h2,h3,p { margin-top:0; } h2 { font-size:1.7rem; font-weight:500; }
 .export-feedback { margin-top:14px; font-family:Arial,sans-serif; font-size:.85rem; color:var(--ok); }
 
 @media (max-width:900px) {
-  .app-shell { flex-direction:column; width:min(100% - 24px, 1120px); padding-top:18px; }
-  .sidebar { flex-direction:row; flex-wrap:wrap; width:100%; max-width:100%; flex-basis:auto; position:static; }
-  .sidebar-illustration { height:auto; min-height:0; max-height:160px; }
+  .app-shell { flex-direction:column; width:min(100% - 24px, 1120px); padding-top:18px; min-height:auto; }
+  .sidebar { flex-direction:column; width:100%; max-width:100%; flex-basis:auto; position:static; align-self:stretch; padding:18px; }
+  .sidebar-illustration { max-height:160px; }
   .welcome-panel,.results-panel { padding:26px 20px; }
   .quiz-grid { grid-template-columns:1fr; }
   .artwork-card { min-height:52vh; padding:10px; }
