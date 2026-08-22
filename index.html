@@ -17,7 +17,7 @@
       <main class="main-content">
         <section id="welcome-panel" class="welcome-panel">
           <fieldset class="rubriques-fieldset">
-            <legend>Quelles informations voulez-vous donner pour identifier les images du quiz&nbsp;? Cochez-les.</legend>
+            <legend>Cette application vous propose d'identifier des œuvres d'art. Quelles informations voulez-vous donner pour identifier les images du quiz que vous allez choisir&nbsp;? Cochez-les.</legend>
             <label class="rubrique-option">
               <input type="checkbox" id="rubrique-artist" />
               <span>Artiste</span>
@@ -37,10 +37,10 @@
           </fieldset>
 
           <label class="primary-button" for="excel-file">
-            Choisir un fichier
+            Choisir un quiz
             <input id="excel-file" type="file" accept=".xlsx,.xls,.csv" />
           </label>
-          <p id="voice-hint" class="hint hidden">🎤 Vous pouvez aussi dicter vos réponses à l'oral pendant le quiz : touchez le champ à remplir, puis appuyez sur le bouton micro.</p>
+          <p class="hint">Vous pourrez dicter vos réponses en appuyant sur le bouton du micro ou les saisir sur le clavier.</p>
           <p class="copyright-notice">© 2026 Stéphane Tassi. Contenu original — reproduction ou réutilisation de la sélection sans autorisation interdite.</p>
         </section>
 
@@ -60,6 +60,7 @@
             <section class="answer-card" aria-label="Vos réponses">
               <form id="answer-form">
                 <button type="button" id="mic-global" class="mic-global-button hidden" aria-label="Dicter la réponse au champ sélectionné">🎤 Dicter (touchez un champ, puis parlez)</button>
+                <p id="mic-hint" class="mic-hint hidden">Pour dicter, attendez que la ligne passe en jaune. Il est possible d'épeler et de corriger par le clavier.</p>
                 <label>Artiste
                   <input id="artist-input" name="artist" autocomplete="off" />
                 </label>

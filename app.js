@@ -19,8 +19,8 @@ function activeFields() { return allFields.filter((field) => state.selectedField
 const SpeechRecognitionImpl = window.SpeechRecognition || window.webkitSpeechRecognition;
 const voiceSupported = Boolean(SpeechRecognitionImpl);
 if (voiceSupported) {
-  $('voice-hint').classList.remove('hidden');
   $('mic-global').classList.remove('hidden');
+  $('mic-hint').classList.remove('hidden');
 }
 // Un seul bouton micro sert les 4 rubriques : il dicte dans le champ actuellement sélectionné
 // (touché/cliqué), et suit automatiquement le focus si on passe à un autre champ pendant l'écoute.
@@ -207,7 +207,8 @@ function yearsOf(text) {
   const matches = String(text).match(/\b(1[0-9]{3}|20[0-9]{2})\b/g);
   return matches ? matches.map(Number) : [];
 }
-function sameDecade(yearA, yearB) { return Math.floor(yearA / 10) === Math.floor(yearB / 10); }
+const DATE_TOLERANCE_YEARS = 5; // ex. bonne date 1857 : de 1852 à 1862 accepté
+function withinDateTolerance(yearA, yearB) { return Math.abs(yearA - yearB) <= DATE_TOLERANCE_YEARS; }
 function isMatch(actual, expected, fieldKey) {
   const answer = keyName(actual); const target = keyName(expected);
   if (!answer || !target) return false;
@@ -220,7 +221,7 @@ function isMatch(actual, expected, fieldKey) {
     if (targetYears.length) {
       const answerYears = yearsOf(answer);
       if (!answerYears.length) return false;
-      return targetYears.some((targetYear) => answerYears.some((answerYear) => sameDecade(targetYear, answerYear)));
+      return targetYears.some((targetYear) => answerYears.some((answerYear) => withinDateTolerance(targetYear, answerYear)));
     }
   }
   // Accepte un élément significatif de la réponse attendue : « Monet » ou « Orsay ».
