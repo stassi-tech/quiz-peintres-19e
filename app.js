@@ -71,6 +71,7 @@ function startDictation() {
     if (!target) return;
     const last = event.results[event.results.length - 1];
     $(target.input).value = last[0].transcript.trim();
+    scheduleAutoAdvance(target.key);
   });
   recognition.addEventListener('end', () => {
     if (manualStopRequested || activeRecognition !== recognition) return;
@@ -102,26 +103,34 @@ if (voiceSupported) {
     $(input).addEventListener('focus', () => { focusedFieldKey = key; });
   });
 }
-// Passage automatique au champ suivant : si l'utilisateur écrit quelque chose au clavier et
-// n'y retouche plus pendant 2 secondes, le curseur avance tout seul vers la rubrique suivante.
+// Passage automatique au champ suivant : si un texte est inscrit (au clavier ou dicté au micro)
+// et qu'il n'est plus modifié pendant 2 secondes, le curseur avance tout seul vers la rubrique suivante.
 const advanceTimers = {};
 function clearAdvanceTimers() {
   Object.values(advanceTimers).forEach(clearTimeout);
   Object.keys(advanceTimers).forEach((key) => delete advanceTimers[key]);
 }
+function scheduleAutoAdvance(key) {
+  if (advanceTimers[key]) clearTimeout(advanceTimers[key]);
+  const field = allFields.find((f) => f.key === key);
+  if (!field) return;
+  const value = $(field.input).value.trim();
+  if (!value) return;
+  advanceTimers[key] = setTimeout(() => {
+    delete advanceTimers[key];
+    const fields = activeFields();
+    const currentIndex = fields.findIndex((f) => f.key === key);
+    const next = fields[currentIndex + 1];
+    if (next) {
+      if (micIsListening) { focusedFieldKey = next.key; } // le micro suit vers le champ suivant
+      else $(next.input).focus();
+    }
+  }, 2000);
+}
 allFields.forEach(({ key, input }) => {
   $(input).addEventListener('input', () => {
     if (micIsListening) stopActiveDictation(); // taper manuellement arrête la dictée continue
-    if (advanceTimers[key]) clearTimeout(advanceTimers[key]);
-    const value = $(input).value.trim();
-    if (!value) return;
-    advanceTimers[key] = setTimeout(() => {
-      delete advanceTimers[key];
-      const fields = activeFields();
-      const currentIndex = fields.findIndex((field) => field.key === key);
-      const next = fields[currentIndex + 1];
-      if (next) $(next.input).focus();
-    }, 2000);
+    scheduleAutoAdvance(key);
   });
 });
 
