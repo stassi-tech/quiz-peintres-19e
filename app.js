@@ -34,13 +34,13 @@ function updateFieldHighlight() {
     $(input)?.closest('label')?.classList.toggle('field-target', key === focusedFieldKey);
   });
 }
-function setFocusedField(key, { focusInput = false } = {}) {
+function setFocusedField(key, { focusInput = false, scroll = true } = {}) {
   focusedFieldKey = key;
   updateFieldHighlight();
-  if (focusInput) {
-    const field = allFields.find((f) => f.key === key);
-    if (field) $(field.input).focus();
-  }
+  const field = allFields.find((f) => f.key === key);
+  if (!field) return;
+  if (focusInput) $(field.input).focus(); // ouvre le clavier sur mobile : uniquement pour une saisie volontaire
+  if (scroll) $(field.input).scrollIntoView({ behavior: 'smooth', block: 'center' }); // la page suit le champ actif
 }
 function currentDictationTarget() {
   const key = (focusedFieldKey && state.selectedFieldKeys.includes(focusedFieldKey)) ? focusedFieldKey : activeFields()[0]?.key;
@@ -308,10 +308,14 @@ function renderQuestion() {
   if (answer.checked) {
     renderCorrection(answer, question);
   } else {
-    // On ramène systématiquement le curseur (et la cible du micro) sur la première rubrique
-    // disponible : évite que la dictée continue vers la dernière ligne de la question précédente.
+    // On ramène la cible du micro sur la première rubrique disponible (évite que la dictée
+    // continue vers la dernière ligne de la question précédente), mais SANS focus() réel :
+    // sur mobile, focus() rouvrirait le clavier à chaque clic sur « Suivante ».
     const first = activeFields()[0];
-    if (first) setFocusedField(first.key, { focusInput: true });
+    if (first) setFocusedField(first.key, { focusInput: false, scroll: false });
+    // La nouvelle question repart du haut de la page (l'image d'abord), plutôt que de rester
+    // défilée là où on s'était arrêté sur la question précédente.
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
   $('previous-button').disabled = state.index === 0;
   $('next-button').textContent = state.index === state.questions.length - 1 ? 'Voir le score' : 'Suivante →';
