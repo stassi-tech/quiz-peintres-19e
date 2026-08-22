@@ -100,10 +100,30 @@ if (voiceSupported) {
   $('mic-global').addEventListener('click', startDictation);
   allFields.forEach(({ key, input }) => {
     $(input).addEventListener('focus', () => { focusedFieldKey = key; });
-    // Taper manuellement dans un champ arrête la dictée continue en cours.
-    $(input).addEventListener('input', () => { if (micIsListening) stopActiveDictation(); });
   });
 }
+// Passage automatique au champ suivant : si l'utilisateur écrit quelque chose au clavier et
+// n'y retouche plus pendant 2 secondes, le curseur avance tout seul vers la rubrique suivante.
+const advanceTimers = {};
+function clearAdvanceTimers() {
+  Object.values(advanceTimers).forEach(clearTimeout);
+  Object.keys(advanceTimers).forEach((key) => delete advanceTimers[key]);
+}
+allFields.forEach(({ key, input }) => {
+  $(input).addEventListener('input', () => {
+    if (micIsListening) stopActiveDictation(); // taper manuellement arrête la dictée continue
+    if (advanceTimers[key]) clearTimeout(advanceTimers[key]);
+    const value = $(input).value.trim();
+    if (!value) return;
+    advanceTimers[key] = setTimeout(() => {
+      delete advanceTimers[key];
+      const fields = activeFields();
+      const currentIndex = fields.findIndex((field) => field.key === key);
+      const next = fields[currentIndex + 1];
+      if (next) $(next.input).focus();
+    }, 2000);
+  });
+});
 
 function keyName(value) {
   return String(value || '').trim().toLocaleLowerCase('fr-FR').replace(/œ/g, 'oe').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
@@ -229,6 +249,7 @@ function showPanel(name) {
 }
 
 function renderQuestion() {
+  clearAdvanceTimers(); // pas d'avance automatique différée qui tomberait sur la mauvaise question
   // La dictée continue n'est plus interrompue au changement de question (voir startDictation) :
   // on récupère au contraire ce qui vient d'être dicté pour pré-remplir la nouvelle question,
   // sans écraser une réponse déjà enregistrée si on revient en arrière.
@@ -275,10 +296,16 @@ function renderCorrection(answer, question) {
     const value = escapeHtml(question[key]);
     if (!tested) {
       // Rubrique non cochée : affichée à titre d'information complète, sans notation ✓/✕.
-      return `<p class="correction-extra"><span class="correction-label">${label} (info)</span><strong class="correction-value">${value}</strong></p>`;
+      return `<div class="correction-item correction-extra">
+        <span class="correction-label">${label}</span><span class="answer-result info">info</span>
+        <strong class="correction-value">${value}</strong>
+      </div>`;
     }
     const correct = isMatch(answer[key], question[key]);
-    return `<p><span class="answer-result ${correct ? 'correct' : 'incorrect'}">${correct ? 'Correct' : 'À réviser'}</span><span class="correction-label">${label}</span><strong class="correction-value">${value}</strong></p>`;
+    return `<div class="correction-item">
+      <span class="correction-label">${label}</span><span class="answer-result ${correct ? 'correct' : 'incorrect'}">${correct ? 'Correct' : 'À réviser'}</span>
+      <strong class="correction-value">${value}</strong>
+    </div>`;
   }).join('');
 }
 function escapeHtml(value) { const div = document.createElement('div'); div.textContent = value; return div.innerHTML; }
