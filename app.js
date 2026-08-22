@@ -29,6 +29,19 @@ let activeRecognition = null;
 let micIsListening = false;
 let manualStopRequested = false;
 let focusedFieldKey = null;
+function updateFieldHighlight() {
+  allFields.forEach(({ key, input }) => {
+    $(input)?.closest('label')?.classList.toggle('field-target', key === focusedFieldKey);
+  });
+}
+function setFocusedField(key, { focusInput = false } = {}) {
+  focusedFieldKey = key;
+  updateFieldHighlight();
+  if (focusInput) {
+    const field = allFields.find((f) => f.key === key);
+    if (field) $(field.input).focus();
+  }
+}
 function currentDictationTarget() {
   const key = (focusedFieldKey && state.selectedFieldKeys.includes(focusedFieldKey)) ? focusedFieldKey : activeFields()[0]?.key;
   return key ? allFields.find((field) => field.key === key) : null;
@@ -100,7 +113,7 @@ function startDictation() {
 if (voiceSupported) {
   $('mic-global').addEventListener('click', startDictation);
   allFields.forEach(({ key, input }) => {
-    $(input).addEventListener('focus', () => { focusedFieldKey = key; });
+    $(input).addEventListener('focus', () => setFocusedField(key));
   });
 }
 // Passage automatique au champ suivant : si un texte est inscrit (au clavier ou dicté au micro)
@@ -121,10 +134,7 @@ function scheduleAutoAdvance(key) {
     const fields = activeFields();
     const currentIndex = fields.findIndex((f) => f.key === key);
     const next = fields[currentIndex + 1];
-    if (next) {
-      if (micIsListening) { focusedFieldKey = next.key; } // le micro suit vers le champ suivant
-      else $(next.input).focus();
-    }
+    if (next) setFocusedField(next.key, { focusInput: !micIsListening }); // le micro suit sans rouvrir le clavier
   }, 2000);
 }
 allFields.forEach(({ key, input }) => {
@@ -295,7 +305,14 @@ function renderQuestion() {
   $('answer-form').classList.toggle('hidden', answer.checked);
   $('correction').classList.toggle('hidden', !answer.checked);
   document.body.classList.toggle('is-corrected', answer.checked);
-  if (answer.checked) renderCorrection(answer, question);
+  if (answer.checked) {
+    renderCorrection(answer, question);
+  } else {
+    // On ramène systématiquement le curseur (et la cible du micro) sur la première rubrique
+    // disponible : évite que la dictée continue vers la dernière ligne de la question précédente.
+    const first = activeFields()[0];
+    if (first) setFocusedField(first.key, { focusInput: true });
+  }
   $('previous-button').disabled = state.index === 0;
   $('next-button').textContent = state.index === state.questions.length - 1 ? 'Voir le score' : 'Suivante →';
 }
